@@ -1,32 +1,32 @@
-const inputPrompt = require("../models/input-prompt")
-const openai = require("../config/openai")
+const inputPrompt = require("../models/input-prompt");
+const openai = require("../config/openai");
 
 module.exports = {
-	async sendText(req, res){
+  async sendText(req, res) {
+    const inputModel = new inputPrompt(req.body);
 
-		const openaiAPI = openai.configuration()
-		const inputModel = new inputPrompt(req.body)
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          { role: "user", content: inputModel.prompt }
+        ],
+      });
 
-		try {
-			const response = await openaiAPI.createCompletion(
-				openai.textCompletion(inputModel)
-			)
+      return res.status(200).json({
+        success: true,
+        data: response.choices[0].message.content,
+      });
 
-			return res.status(200).json({
-				sucess: true,
-				data: response.data.choices[0].text
-			})
+    } catch (error) {
+      console.error("Erro na OpenAI:", error);
 
-		} catch (error) {
-
-			return res.status(400).json({
-				sucess: false,
-				error: error.response
-				? error.response.data
-				: 'There was an inssue on the server'
-			})
-
-		}
-	}
-
-}
+      return res.status(400).json({
+        success: false,
+        error: error.response
+          ? error.response.data
+          : 'Houve um problema no servidor',
+      });
+    }
+  }
+};
